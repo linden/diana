@@ -64,14 +64,6 @@ fn returns_correct_datetime_for_each_interval_at_length_1() {
     test_all_intervals_for_length!(1);
 }
 #[test]
-fn returns_correct_datetime_for_each_interval_at_many_length() {
-    // We test each interval directly with the above macro
-    // This tests runs for many intervals
-    for length in 1..NUM_INTERVAL_LENGTHS_TO_TEST {
-        test_all_intervals_for_length!(length);
-    }
-}
-#[test]
 fn returns_error_on_invalid_interval() {
     let decoded = decode_time_str("1q");
     if decoded.is_ok() {
