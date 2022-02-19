@@ -1,6 +1,7 @@
 #![allow(missing_docs)]
 
 use thiserror::Error;
+pub use anyhow::{Result, bail};
 
 // TODO fix the integration errors
 
