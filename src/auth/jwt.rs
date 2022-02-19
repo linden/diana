@@ -3,7 +3,9 @@ use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::errors::*;
+use crate::errors::DianaError;
+
+use anyhow::{Result, bail};
 
 /// The claims made by a JWT, including metadata.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
@@ -68,7 +70,7 @@ pub fn decode_time_str(time_str: &str) -> Result<u64> {
                 'w' => Duration::weeks(interval_length),
                 'M' => Duration::days(interval_length * 30), // Multiplying the number of months by 30 days (assumed length of a month)
                 'y' => Duration::days(interval_length * 365), // Multiplying the number of years by 365 days (assumed length of a year)
-                c => bail!(ErrorKind::InvalidDatetimeIntervalIndicator(c.to_string())),
+                c => bail!(DianaError::InvalidDatetimeIntervalIndicator(c.to_string())),
             };
             duration_after_current = duration_after_current + duration;
             // Reset that working variable

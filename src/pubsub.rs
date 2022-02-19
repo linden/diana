@@ -7,8 +7,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tokio::sync::broadcast::{channel as create_channel, Sender};
 use tokio_stream::Stream;
+use anyhow::{Result, bail};
 
-use crate::errors::*;
+use crate::errors::DianaError;
 
 const MESSAGES_TO_BE_RETAINED: usize = 5;
 
@@ -127,25 +128,25 @@ impl Publisher {
             .header("Authorization", "Bearer ".to_string() + &self.token)
             .send()
             .await
-            .map_err(|_| ErrorKind::SubscriptionDataPublishFailed)?;
+            .map_err(|_| DianaError::SubscriptionDataPublishFailed)?;
 
         // Handle if the request wasn't successful on an HTTP level
         if res.status().to_string() != "200 OK" {
-            bail!(ErrorKind::SubscriptionDataPublishFailed)
+            bail!(DianaError::SubscriptionDataPublishFailed)
         }
 
         // Get the body out (data still stringified though, that's handled by resolvers)
         let body: GQLPublishResponse = serde_json::from_str(
             &res.text()
                 .await
-                .map_err(|_| ErrorKind::SubscriptionDataPublishFailed)?,
+                .map_err(|_| DianaError::SubscriptionDataPublishFailed)?,
         )
-        .map_err(|_| ErrorKind::SubscriptionDataPublishFailed)?;
+        .map_err(|_| DianaError::SubscriptionDataPublishFailed)?;
 
         // Confirm nothing's gone wrong on a GraphQL level (basically only if we got `false` instead of `true`)
         match body.data.publish {
             true => Ok(()),
-            _ => bail!(ErrorKind::SubscriptionDataPublishFailed),
+            _ => bail!(DianaError::SubscriptionDataPublishFailed),
         }
     }
 }

@@ -1,7 +1,8 @@
 use std::collections::HashMap;
+use anyhow::{Result, bail};
 
 use crate::auth::jwt::Claims;
-use crate::errors::*;
+use crate::errors::DianaError;
 
 /// An authentication token with claims.
 #[derive(Debug, Clone)]
@@ -49,7 +50,7 @@ impl AuthState {
     pub fn get_claims(&self) -> Result<&Claims> {
         match self {
             Self::Authorised(AuthToken(claims)) => Ok(claims),
-            _ => bail!(ErrorKind::Unauthorised),
+            _ => bail!(DianaError::Unauthorised),
         }
     }
 }

@@ -1,11 +1,13 @@
 use async_graphql::{EmptySubscription, Object as GQLObject, ObjectType, Schema, SubscriptionType};
+use anyhow::{Result, bail};
 use std::any::Any;
 use std::sync::Mutex;
 
-use crate::errors::*;
 use crate::graphql_utils::{get_auth_data_from_ctx, get_pubsub_from_ctx};
 use crate::is_authed;
 use crate::pubsub::{PubSub, Publisher};
+
+use crate::errors::DianaError;
 
 // The base query type simply allows us to set up the subscriptions schema (has to have at least one query)
 #[derive(Default, Clone)]
@@ -44,7 +46,7 @@ impl PublishMutation {
             pubsub.publish(&channel, data);
             Ok(true)
         } else {
-            bail!(ErrorKind::Unauthorised)
+            bail!(DianaError::Unauthorised)
         }
     }
 }

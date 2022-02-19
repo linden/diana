@@ -5,10 +5,12 @@
 
 use async_graphql::{ObjectType, SubscriptionType};
 use std::any::Any;
+use anyhow::{Result, bail};
 
 use crate::auth::core::AuthBlockLevel;
-use crate::errors::*;
 pub use crate::graphql::{SubscriptionsServerInformation, UserSchema};
+
+use crate::errors::DianaError;
 
 /// The options for creating the normal server, subscriptions server, and serverless function.
 /// You should define your options in one file and then import them everywhere you need them.
@@ -202,37 +204,37 @@ where
     pub fn finish(self) -> Result<Options<C, Q, M, S>> {
         // If the playground has been enabled in production, throw
         if !cfg!(debug_assertions) && self.playground_endpoint.is_some() {
-            bail!(ErrorKind::AttemptedPlaygroundInProduction);
+            bail!(DianaError::AttemptedPlaygroundInProduction);
         }
 
         let opts = Options {
-            ctx: self.ctx.ok_or(ErrorKind::IncompleteBuilderFields)?,
+            ctx: self.ctx.ok_or(DianaError::IncompleteBuilderFields)?,
             subscriptions_server_data: match self.use_subscriptions_server {
                 true => Some(SubscriptionsServerInformation {
                     hostname: self
                         .subscriptions_server_hostname
-                        .ok_or(ErrorKind::IncompleteBuilderFields)?,
+                        .ok_or(DianaError::IncompleteBuilderFields)?,
                     port: self
                         .subscriptions_server_port
-                        .ok_or(ErrorKind::IncompleteBuilderFields)?,
+                        .ok_or(DianaError::IncompleteBuilderFields)?,
                     endpoint: self
                         .subscriptions_server_endpoint
-                        .ok_or(ErrorKind::IncompleteBuilderFields)?,
+                        .ok_or(DianaError::IncompleteBuilderFields)?,
                     jwt_to_connect: self
                         .subscriptions_server_jwt_to_connect
-                        .ok_or(ErrorKind::IncompleteBuilderFields)?,
+                        .ok_or(DianaError::IncompleteBuilderFields)?,
                 }),
                 false => None,
             },
-            schema: self.schema.ok_or(ErrorKind::IncompleteBuilderFields)?,
-            jwt_secret: self.jwt_secret.ok_or(ErrorKind::IncompleteBuilderFields)?,
+            schema: self.schema.ok_or(DianaError::IncompleteBuilderFields)?,
+            jwt_secret: self.jwt_secret.ok_or(DianaError::IncompleteBuilderFields)?,
             authentication_block_state: self
                 .authentication_block_state
-                .ok_or(ErrorKind::IncompleteBuilderFields)?,
+                .ok_or(DianaError::IncompleteBuilderFields)?,
             playground_endpoint: self.playground_endpoint, // This can be an option (we may not have a playground at all)
             graphql_endpoint: self
                 .graphql_endpoint
-                .ok_or(ErrorKind::IncompleteBuilderFields)?,
+                .ok_or(DianaError::IncompleteBuilderFields)?,
         };
 
         Ok(opts)

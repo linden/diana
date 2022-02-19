@@ -3,9 +3,9 @@
 
 use async_graphql::{EmptySubscription, ObjectType, Request, Schema, SubscriptionType};
 use std::any::Any;
+use anyhow::{Result, bail};
 
 use crate::auth::core::{get_auth_verdict, get_token_state_from_header, AuthVerdict};
-use crate::errors::*;
 use crate::graphql::{
     get_schema_for_subscriptions, get_schema_without_subscriptions, PublishMutation,
     SubscriptionQuery,

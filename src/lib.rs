@@ -31,6 +31,9 @@ pub mod graphql_utils;
 mod options;
 mod pubsub;
 
+#[macro_use]
+extern crate anyhow;
+
 // Public exports accessible from the root (everything the user will need)
 pub use crate::auth::auth_state::{AuthState, AuthToken};
 pub use crate::auth::core::{AuthBlockLevel, AuthVerdict};

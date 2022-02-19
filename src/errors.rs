@@ -1,98 +1,74 @@
 #![allow(missing_docs)]
 
-pub use error_chain::bail;
-use error_chain::error_chain;
+use thiserror::Error;
 
 // TODO fix the integration errors
 
-// The `error_chain` setup for the whole crate
 // All systems use these errors, except for GraphQL resolvers, because they have to return a particular kind of error
-error_chain! {
-    // The custom errors for this crate (very broad)
-    errors {
-        /// An environment variable had an invalid type.
-        /// E.g. a port was given as a hex string for some reason.
-        InvalidEnvVarType(var_name: String, expected: String) {
-            description("invalid environment variable type")
-            display(
-                "invalid environment variable type for variable '{var_name}', expected '{expected}'",
-                var_name=var_name,
-                expected=expected
-            )
-        }
+#[derive(Error, Debug)]
+pub enum DianaError {	
+    /// An environment variable had an invalid type.
+    /// E.g. a port was given as a hex string for some reason.
+	#[error("invalid environment variable type for variable '{0}', expected '{1}'")]
+    InvalidEnvVarType(String, String),
+	
+    /// A required part of the GraphQL context was not found.
+	#[error("required graphql context element '{0}' not found")]
+    GraphQLContextNotFound(String),
+	
+    /// A Mutex was poisoned (if `.lock()` failed).
+	#[error("mutex '{0}' poisoned")]
+    MutexPoisoned(String),
+	
+    /// The subscriptions server failed to publish data it was asked to. This error is usually caused by an authentication failure.
+	#[error("failed to publish data to the subscriptions server, this is most likely due to an authentication failure")]
+    SubscriptionDataPublishFailed,
+	
+    /// An invalid indicator string was used when trying to convert a timestring into a datetime.
+	#[error("invalid indicator '{0}' in timestring, must be one of: s, m, h, d, w, M, y")]
+    InvalidDatetimeIntervalIndicator(String),
+	
+    /// There was an unauthorised access attempt.
+	#[error("unable to comply with request due to lack of valid and sufficient authentication")]
+    Unauthorised,
+	
+	/// One or more required builder fields weren't set up.
+	#[error("some required builder fields haven't been instantiated")]
+	IncompleteBuilderFields,
+	
+    /// The creation of an HTTP response for Lambda or its derivatives failed.
+	#[error("the builder for an http response (netlify_lambda_http) returned an error")]
+    HttpResponseBuilderFailed,
+	
+    /// There was an attempt to create a subscriptions server without declaring its existence or configuration in the [Options].
+	#[error("you tried to create a subscriptions server without configuring it in the options")]
+    InvokedSubscriptionsServerWithInvalidOptions,
+	
+    /// There was an attempt to initialize the GraphiQL playground in a production environment.
+	#[error("you tried to initialize the GraphQL playground in production, which is not supported due to authentication issues")]
+    AttemptedPlaygroundInProduction,
 
-        /// A required part of the GraphQL context was not found.
-        GraphQLContextNotFound(elem_name: String) {
-            description("required graphql context element not found")
-            display("required graphql context element '{}' not found", elem_name)
-        }
-
-        /// A Mutex was poisoned (if `.lock()` failed).
-        MutexPoisoned(mutex_name: String) {
-            description("mutex poisoned")
-            display("mutex '{}' poisoned", mutex_name)
-        }
-
-        /// The subscriptions server failed to publish data it was asked to. This error is usually caused by an authentication failure.
-        SubscriptionDataPublishFailed {
-            description("failed to publish data to the subscriptions server")
-            display("failed to publish data to the subscriptions server, this is most likely due to an authentication failure")
-        }
-
-        /// An invalid indicator string was used when trying to convert a timestring into a datetime.
-        InvalidDatetimeIntervalIndicator(indicator: String) {
-            description("invalid indicator in timestring")
-            display("invalid indicator '{}' in timestring, must be one of: s, m, h, d, w, M, y", indicator)
-        }
-
-        /// There was an unauthorised access attempt.
-        Unauthorised {
-            description("unauthorised access attempt")
-            display("unable to comply with request due to lack of valid and sufficient authentication")
-        }
-
-        /// One or more required builder fields weren't set up.
-        IncompleteBuilderFields {
-            description("not all required builder fields were instantiated")
-            display("some required builder fields haven't been instantiated")
-        }
-
-        /// The creation of an HTTP response for Lambda or its derivatives failed.
-        HttpResponseBuilderFailed {
-            description("the builder for an http response (netlify_lambda_http) returned an error")
-            display("the builder for an http response (netlify_lambda_http) returned an error")
-        }
-
-        /// There was an attempt to create a subscriptions server without declaring its existence or configuration in the [Options].
-        InvokedSubscriptionsServerWithInvalidOptions {
-            description("you tried to create a subscriptions server without configuring it in the options")
-            display("you tried to create a subscriptions server without configuring it in the options")
-        }
-
-        /// There was an attempt to initialize the GraphiQL playground in a production environment.
-        AttemptedPlaygroundInProduction {
-            description("you tried to initialize the GraphQL playground in production, which is not supported due to authentication issues")
-            display("you tried to initialize the GraphQL playground in production, which is not supported due to authentication issues")
-        }
-
-        /// There was an error in one of the integrations.
-        IntegrationError(message: String, integration_name: String) {
-            description("an error occurred in one of Diana's integration libraries")
-            display(
-                "the following error occurred in the '{integration_name}' integration library: {message}",
-                integration_name=integration_name,
-                message=message
-            )
-        }
-    }
-    // We work with many external libraries, all of which have their own errors
-    foreign_links {
-        Io(::std::io::Error);
-        EnvVar(::std::env::VarError);
-        Reqwest(::reqwest::Error);
-        Json(::serde_json::Error);
-        JsonWebToken(::jsonwebtoken::errors::Error);
-    }
+    /// There was an error in one of the integrations.
+	#[error("the following error occurred in the '{0}' integration library: {1}")]
+    IntegrationError(String, String),
+	
+	#[error("unknown IO issue")]
+    Io(::std::io::Error),
+	
+	#[error("unknown EnvVar issue")]
+    EnvVar(::std::env::VarError),
+	
+	#[error("unknown Reqwest issue")]
+    Reqwest(::reqwest::Error),
+	
+	#[error("unknown JSON issue")]
+    Json(::serde_json::Error),
+	
+	#[error("unknown JSON web token issue")]
+    JsonWebToken(::jsonwebtoken::errors::Error),
+	
+    #[error("unknown error")]
+    Unknown,
 }
 
 /// A wrapper around [`async_graphql::Result<T>`](async_graphql::Result).

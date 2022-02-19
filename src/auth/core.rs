@@ -1,8 +1,9 @@
 // This file contains the core authentication logic that will be used regardless of integration
 
+use anyhow::{Result, bail};
+
 use crate::auth::auth_state::{AuthState, AuthToken};
 use crate::auth::jwt::{get_jwt_secret, validate_and_decode_jwt};
-use crate::errors::*;
 
 /// An enum for the level of blocking imposed on a particular endpoint.
 /// Your choice on this should be carefully evaluated based on your threat model. Please choose wisely!

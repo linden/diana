@@ -1,13 +1,15 @@
 // Utility functions for GraphQL resolvers
 use std::sync::{Mutex, MutexGuard};
 use tokio_stream::Stream;
+use anyhow::{Result, bail};
 
 use crate::auth::auth_state::AuthState;
-use crate::errors::*;
 use crate::pubsub::PubSub;
 
+use crate::errors::DianaError;
+
 /// Checks to see if the given authentication state matches the series of given claims. This must be provided with the authentication state,
-/// a series of claims to check against, and code to execute if the user is authenticated. This will call [`bail!`] with an [`ErrorKind::Unauthorised`](crate::errors::ErrorKind::Unauthorised)
+/// a series of claims to check against, and code to execute if the user is authenticated. This will call [`bail!`] with an [`DianaError::Unauthorised`](crate::errors::DianaError::Unauthorised)
 /// error if the user is unauthenticated, so **that must be handled in your function's return type**!
 /// # Example
 /// This is a simplified version of the internal logic that publishes data to the subscriptions server.
@@ -63,7 +65,7 @@ macro_rules! if_authed(
             if $auth_state.has_claims(test_claims) {
                 $code
             } else {
-                Err($crate::errors::ErrorKind::Unauthorised.into())
+                Err($crate::errors::DianaError::Unauthorised.into())
             }
         }
      };
@@ -76,7 +78,7 @@ macro_rules! if_authed(
 /// This is a simplified version of the internal logic that publishes data to the subscriptions server.
 /// ```
 /// use diana::{
-///     errors::{Result, GQLResult, bail, ErrorKind},
+///     errors::{Result, GQLResult, bail, DianaError},
 ///     graphql_utils::get_auth_data_from_ctx,
 ///     async_graphql::{Object as GQLObject},
 ///     is_authed,
@@ -102,7 +104,7 @@ macro_rules! if_authed(
 ///             Ok(true)
 ///         } else {
 ///             // Your error handling code here
-///             bail!(ErrorKind::Unauthorised)
+///             bail!(DianaError::Unauthorised)
 ///         }
 ///     }
 /// }
@@ -187,7 +189,7 @@ pub fn get_auth_data_from_ctx<'a>(
 ) -> Result<&'a AuthState> {
     let auth_state = raw_ctx
         .data::<AuthState>()
-        .map_err(|_err| ErrorKind::GraphQLContextNotFound("auth_state".to_string()))?;
+        .map_err(|_err| DianaError::GraphQLContextNotFound("auth_state".to_string()))?;
 
     Ok(auth_state)
 }
@@ -199,10 +201,10 @@ pub fn get_pubsub_from_ctx<'a>(
     // We store the PubSub instance as a Mutex because we need it sent/synced between threads as a mutable
     let pubsub_mutex = raw_ctx
         .data::<Mutex<PubSub>>()
-        .map_err(|_err| ErrorKind::GraphQLContextNotFound("pubsub".to_string()))?;
+        .map_err(|_err| DianaError::GraphQLContextNotFound("pubsub".to_string()))?;
     let pubsub = pubsub_mutex
         .lock()
-        .map_err(|_err| ErrorKind::MutexPoisoned("pubsub".to_string()))?;
+        .map_err(|_err| DianaError::MutexPoisoned("pubsub".to_string()))?;
 
     Ok(pubsub)
 }
